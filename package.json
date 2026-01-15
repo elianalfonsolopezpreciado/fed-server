@@ -1,0 +1,20 @@
+{
+  "name": "fed-calendar-api",
+  "version": "1.0.0",
+  "description": "API serverless para calendario de reuniones Fed FOMC - Compatible con MT5 Bot Anakin",
+  "main": "api/fed-status.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "keywords": [
+    "fed",
+    "fomc",
+    "calendar",
+    "trading",
+    "mt5",
+    "api"
+  ],
+  "author": "Tu Nombre",
+  "license": "MIT"
+}

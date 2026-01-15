@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fed Calendar API - Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 2px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .result h3 {
+            margin-bottom: 10px;
+        }
+        
+        .result pre {
+            background: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+        
+        .status {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        .info {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        
+        .info h4 {
+            color: #1976D2;
+            margin-bottom: 8px;
+        }
+        
+        .info p {
+            color: #555;
+            line-height: 1.6;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📅 Fed Calendar API</h1>
+        <p class="subtitle">Prueba tu API para el Bot Anakin MT5</p>
+        
+        <div class="input-group">
+            <label for="apiUrl">URL de tu API Vercel:</label>
+            <input 
+                type="text" 
+                id="apiUrl" 
+                placeholder="https://tu-proyecto.vercel.app/fed-status"
+                value="http://localhost:3000/api/fed-status"
+            >
+        </div>
+        
+        <button onclick="testAPI()">🚀 Probar API</button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Consultando API...</p>
+        </div>
+        
+        <div class="result" id="result"></div>
+        
+        <div class="info">
+            <h4>ℹ️ Cómo funciona:</h4>
+            <p>
+                <strong>Respuesta "1":</strong> Hay reunión de la Fed hoy<br>
+                <strong>Respuesta "0":</strong> No hay reunión de la Fed hoy<br><br>
+                El Bot Anakin llamará a esta API cada día a las 00:01 GMT.
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        async function testAPI() {
+            const url = document.getElementById('apiUrl').value;
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+            
+            // Validar URL
+            if (!url || url.trim() === '') {
+                showError('Por favor ingresa una URL válida');
+                return;
+            }
+            
+            // Mostrar loading
+            resultDiv.style.display = 'none';
+            loadingDiv.style.display = 'block';
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'text/plain'
+                    }
+                });
+                
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+                
+                const text = await response.text();
+                
+                loadingDiv.style.display = 'none';
+                
+                if (response.ok) {
+                    showSuccess(text, responseTime);
+                } else {
+                    showError(`Error HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+            } catch (error) {
+                loadingDiv.style.display = 'none';
+                showError(`Error de conexión: ${error.message}`);
+            }
+        }
+        
+        function showSuccess(text, responseTime) {
+            const resultDiv = document.getElementById('result');
+            const today = new Date().toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            let statusText = '';
+            let statusEmoji = '';
+            
+            if (text === '1') {
+                statusText = '¡HAY REUNIÓN FED HOY!';
+                statusEmoji = '🔴';
+            } else if (text === '0') {
+                statusText = 'No hay reunión Fed hoy';
+                statusEmoji = '🟢';
+            } else {
+                statusText = 'Respuesta inesperada';
+                statusEmoji = '⚠️';
+            }
+            
+            resultDiv.className = 'result success';
+            resultDiv.innerHTML = `
+                <h3>✅ API funcionando correctamente</h3>
+                <div class="status">${statusEmoji} ${text}</div>
+                <p><strong>Interpretación:</strong> ${statusText}</p>
+                <p><strong>Fecha:</strong> ${today}</p>
+                <p><strong>Tiempo de respuesta:</strong> ${responseTime}ms</p>
+                <h4 style="margin-top: 20px;">Respuesta cruda:</h4>
+                <pre>${text}</pre>
+                <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 4px; border-left: 4px solid #ffc107;">
+                    <strong>✓ Compatible con Bot Anakin MT5</strong><br>
+                    El bot recibirá: <code>${text}</code>
+                </div>
+            `;
+            resultDiv.style.display = 'block';
+        }
+        
+        function showError(message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result error';
+            resultDiv.innerHTML = `
+                <h3>❌ Error al conectar con la API</h3>
+                <p>${message}</p>
+                <h4 style="margin-top: 15px;">Posibles soluciones:</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Verifica que la URL sea correcta</li>
+                    <li>Asegúrate de que el proyecto esté desplegado en Vercel</li>
+                    <li>Revisa que CORS esté habilitado</li>
+                    <li>Intenta acceder directamente en tu navegador</li>
+                </ul>
+            `;
+            resultDiv.style.display = 'block';
+        }
+        
+        // Auto-test al cargar si hay URL en el input
+        window.addEventListener('load', () => {
+            const urlInput = document.getElementById('apiUrl');
+            if (urlInput.value && urlInput.value !== 'http://localhost:3000/api/fed-status') {
+                // No auto-ejecutar, solo cargar
+            }
+        });
+    </script>
+</body>
+</html>
